@@ -1,0 +1,22 @@
+name: Release
+
+on:
+  release:
+    types: [ prereleased, released ]
+
+jobs:
+  release:
+    name: Release docker images and config
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_IMAGE_NAME: newrelic/nri-kube-events
+      DOCKER_PLATFORMS: "linux/amd64,linux/arm64,linux/arm" # Must be consistent with the matrix from the job above
+      S3_PATH: s3://nr-downloads-main/infrastructure_agent
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Upload latest manifest to S3
+        if: ${{ ! github.event.release.prerelease }}
+        run: |
+          aws s3 cp deploy/nri-kube-events.yaml $S3_PATH/integrations/kubernetes/nri-kube-events-latest.yaml
